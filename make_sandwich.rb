@@ -1,9 +1,6 @@
 require 'bundler/setup'
 require 'resque'
 
-BUNDLE_PATH = Bundler.bundle_path.to_s
-APP_PATH = __dir__ + '/'
-
 class Workflow
   MAX_RETRIES = 3
 
@@ -38,35 +35,33 @@ class Workflow
   end
 end
 
-module Workflows
-  class MakeSandwich < Workflow
-    INGREDIENTS = [
-      'chicken salad',
-      'egg salad',
-      'ham and cheese',
-      'italian deli',
-      'tunafish',
-    ]
+class MakeSandwich < Workflow
+  INGREDIENTS = [
+    'chicken salad',
+    'egg salad',
+    'ham and cheese',
+    'italian deli',
+    'tunafish',
+  ]
 
-    self.queue = 'sandwiches'
+  self.queue = 'sandwiches'
 
-    def initialize(ingredients, order)
-      @ingredients = ingredients
-      @order = order
-    end
-
-    def run
-      puts "Making #{@ingredients} sandwich, order #{@order}..."
-      # sleep 0.1
-      raise "Oops, dropped order #{@order} on the floor!" if rand < 0.1
-    end
-
+  def initialize(ingredients, order)
+    @ingredients = ingredients
+    @order = order
   end
+
+  def run
+    puts "Making #{@ingredients} sandwich, order #{@order}..."
+    # sleep 0.1
+    raise "Oops, dropped order #{@order} on the floor!" if rand < 0.1
+  end
+
 end
 
 if $0 == __FILE__
   10.times do |order|
-    ingredients = Workflows::MakeSandwich::INGREDIENTS.sample
-    Workflows::MakeSandwich.run_later(ingredients, order)
+    ingredients = MakeSandwich::INGREDIENTS.sample
+    MakeSandwich.run_later(ingredients, order)
   end
 end
