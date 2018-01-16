@@ -10,7 +10,7 @@ module Resque::Failure
     APP_PATH = __dir__ + '/'
 
     def save
-      warn exception.message
+      warn "#{exception.class}: #{exception.message}"
       warn filter(exception.backtrace)
     end
 

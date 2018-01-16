@@ -1,15 +1,54 @@
 require 'bundler/setup'
 require 'resque'
 
+BUNDLE_PATH = Bundler.bundle_path.to_s
+APP_PATH = __dir__ + '/'
+
+class Workflow
+  MAX_RETRIES = 3
+
+  def self.run(*args)
+    new(*args).run
+  end
+
+  def self.run_later(*args)
+    metadata = {'retries' => MAX_RETRIES}
+    Resque.enqueue(self, metadata, args)
+  end
+
+  # Resque interface
+  def self.perform(metadata, args)
+    run(*args)
+  rescue => error
+    if metadata['retries'] > 0
+      warn "#{error.class}: #{error.message}"
+      metadata = metadata.merge('retries' => metadata['retries'] - 1)
+      Resque.enqueue(self, metadata, args)
+    else
+      raise error
+    end
+  end
+
+  def self.queue=(queue)
+    @queue = queue
+  end
+
+  def self.queue
+    @queue ||= 'default'
+  end
+end
+
 module Workflows
-  class MakeSandwich
-  INGREDIENTS = [
-    'chicken salad',
-    'egg salad',
-    'ham and cheese',
-    'italian deli',
-    'tunafish',
-  ]
+  class MakeSandwich < Workflow
+    INGREDIENTS = [
+      'chicken salad',
+      'egg salad',
+      'ham and cheese',
+      'italian deli',
+      'tunafish',
+    ]
+
+    self.queue = 'sandwiches'
 
     def initialize(ingredients, order)
       @ingredients = ingredients
@@ -19,32 +58,14 @@ module Workflows
     def run
       puts "Making #{@ingredients} sandwich, order #{@order}..."
       # sleep 0.1
-      raise "Oops, dropped order #{@order} on the floor..." if rand < 0.1
+      raise "Oops, dropped order #{@order} on the floor!" if rand < 0.1
     end
 
-    # Workflow interface
-    def self.run(*args)
-      new(*args).run
-    end
-
-    def self.run_later(*args)
-      Resque.enqueue(self, *args)
-    end
-
-    # Resque interface
-    @queue = 'default'
-
-    def self.perform(*args)
-      run(*args)
-    rescue => error
-      warn error.message
-      Resque.enqueue(self, *args)
-    end
   end
 end
 
 if $0 == __FILE__
-  50.times do |order|
+  10.times do |order|
     ingredients = Workflows::MakeSandwich::INGREDIENTS.sample
     Workflows::MakeSandwich.run_later(ingredients, order)
   end
