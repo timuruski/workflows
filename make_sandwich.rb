@@ -43,42 +43,6 @@ module Workflows
   end
 end
 
-# class MakeSandwich
-#   @queue = 'default'
-
-#   def self.perform(args)
-#     new(**args.transform_keys(&:to_sym)).perform
-#   end
-
-#   # ---
-
-#   INGREDIENTS = [
-#     'chicken salad',
-#     'egg salad',
-#     'ham and cheese',
-#     'italian deli',
-#     'tunafish',
-#   ]
-
-#   def self.random_ingredients(order:)
-#     Resque.enqueue(self, order: order, ingredients: INGREDIENTS.sample)
-#   end
-
-#   def initialize(order:, ingredients:)
-#     @order = order
-#     @ingredients = ingredients
-#   end
-
-#   def perform
-#     # puts "Making #{@ingredients} sandwich..."
-#     sleep 0.1
-#     raise "Oops, dropped sandwich on the floor..." if rand < 0.1
-#     puts "Order #{@order} up!"
-#   rescue
-#     Resque.enqueue(self.class, order: @order, ingredients: @ingredients)
-#   end
-# end
-
 if $0 == __FILE__
   50.times do |order|
     ingredients = Workflows::MakeSandwich::INGREDIENTS.sample
